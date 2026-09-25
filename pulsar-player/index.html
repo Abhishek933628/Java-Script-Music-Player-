@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Pulsar — a premium dark-themed music streaming player built with vanilla JavaScript."
+    />
+    <title>Pulsar · Feel the Frequency</title>
+
+    <!-- Fonts (CDN with system fallbacks so the UI still looks right offline) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons: Font Awesome, vendored locally so it works offline -->
+    <link rel="stylesheet" href="vendor/fontawesome.min.css" />
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Favicon: original inline SVG waveform mark -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%230c1512'/%3E%3Cg stroke='%2319e3a4' stroke-width='5' stroke-linecap='round'%3E%3Cpath d='M16 32v0'/%3E%3Cpath d='M24 22v20'/%3E%3Cpath d='M32 14v36'/%3E%3Cpath d='M40 24v16'/%3E%3Cpath d='M48 30v4'/%3E%3C/g%3E%3C/svg%3E"
+    />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <!-- ══════════════════ SIDEBAR ══════════════════ -->
+      <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+        <div class="sidebar-scroll">
+          <!-- Brand -->
+          <a class="brand" href="#" data-nav="home" aria-label="Pulsar home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 64 64">
+                <defs>
+                  <linearGradient id="brandGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#19e3a4" />
+                    <stop offset="1" stop-color="#0bb8d9" />
+                  </linearGradient>
+                </defs>
+                <circle
+                  cx="32"
+                  cy="32"
+                  r="29"
+                  fill="none"
+                  stroke="url(#brandGrad)"
+                  stroke-width="4"
+                />
+                <g
+                  stroke="url(#brandGrad)"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                >
+                  <path d="M17 32v0.1" />
+                  <path d="M24.5 24v16" />
+                  <path d="M32 16v32" />
+                  <path d="M39.5 26v12" />
+                  <path d="M47 31v2" />
+                </g>
+              </svg>
+            </span>
+            <span class="brand-text">Pulsar<em>feel the frequency</em></span>
+          </a>
+
+          <!-- Primary nav -->
+          <nav class="side-nav" aria-label="Primary">
+            <a href="#" class="side-link active" data-nav="home"
+              ><i class="fa-solid fa-house"></i><span>Home</span></a
+            >
+            <a href="#" class="side-link" data-nav="search"
+              ><i class="fa-solid fa-magnifying-glass"></i
+              ><span>Search</span></a
+            >
+            <a href="#" class="side-link" data-nav="library"
+              ><i class="fa-solid fa-layer-group"></i
+              ><span>Your Library</span></a
+            >
+            <a href="#" class="side-link" data-nav="liked"
+              ><i class="fa-solid fa-heart"></i><span>Liked Songs</span
+              ><span class="side-count" id="likedCountSide">0</span></a
+            >
+            <a href="#" class="side-link" data-nav="recent"
+              ><i class="fa-solid fa-clock-rotate-left"></i
+              ><span>Recently Played</span></a
+            >
+          </nav>
+
+          <!-- Playlists -->
+          <div class="side-section">
+            <div class="side-section-head">
+              <h2><i class="fa-solid fa-list-ul"></i> Playlists</h2>
+              <button
+                class="icon-btn ghost sm"
+                id="btnCreatePlaylist"
+                title="Create playlist"
+                aria-label="Create playlist"
+              >
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+            <div class="side-playlists" id="sidebarPlaylists">
+              <!-- rendered by JS -->
+            </div>
+          </div>
+
+          <button class="create-playlist-btn" id="btnCreatePlaylistBig">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Create Playlist
+          </button>
+
+          <p class="side-foot">
+            © 2026 Pulsar Audio Labs<br />Demo project · vanilla JS
+          </p>
+        </div>
+      </aside>
+      <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+
+      <!-- ══════════════════ MAIN COLUMN ══════════════════ -->
+      <div class="main-col">
+        <!-- Top navbar -->
+        <header class="topbar" id="topbar">
+          <button
+            class="icon-btn only-mobile"
+            id="btnMenu"
+            aria-label="Open menu"
+          >
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <div class="nav-arrows">
+            <button
+              class="icon-btn round"
+              id="btnBack"
+              aria-label="Go back"
+              disabled
+            >
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <button
+              class="icon-btn round"
+              id="btnFwd"
+              aria-label="Go forward"
+              disabled
+            >
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <div class="search-wrap" id="searchWrap">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input
+              type="search"
+              id="searchInput"
+              placeholder="Search songs, artists or albums…"
+              autocomplete="off"
+              aria-label="Search"
+            />
+            <button
+              class="icon-btn ghost sm search-clear"
+              id="searchClear"
+              hidden
+              aria-label="Clear search"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <button
+            class="icon-btn round only-mobile"
+            id="btnSearchMobile"
+            aria-label="Search"
+          >
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </button>
+
+          <div class="topbar-right">
+            <button
+              class="icon-btn ghost"
+              id="btnNotif"
+              aria-label="Notifications"
+            >
+              <i class="fa-regular fa-bell"></i
+              ><span class="notif-dot" aria-hidden="true"></span>
+            </button>
+            <button
+              class="icon-btn ghost hide-sm"
+              id="btnSettings"
+              aria-label="Settings"
+            >
+              <i class="fa-solid fa-gear"></i>
+            </button>
+            <button
+              class="profile-chip"
+              id="btnProfile"
+              aria-label="Your profile"
+            >
+              <span class="avatar" aria-hidden="true">A</span>
+              <span class="hide-sm"
+                >Aarav <i class="fa-solid fa-chevron-down tiny"></i
+              ></span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Scrollable view area — everything below is rendered by JS -->
+        <main class="view" id="view" tabindex="-1"></main>
+
+        <!-- Mobile bottom navigation -->
+        <nav class="mobile-nav" id="mobileNav" aria-label="Mobile">
+          <button class="mob-link active" data-nav="home">
+            <i class="fa-solid fa-house"></i><span>Home</span>
+          </button>
+          <button class="mob-link" data-nav="search">
+            <i class="fa-solid fa-magnifying-glass"></i><span>Search</span>
+          </button>
+          <button class="mob-link" data-nav="library">
+            <i class="fa-solid fa-layer-group"></i><span>Library</span>
+          </button>
+          <button class="mob-link" data-nav="liked">
+            <i class="fa-solid fa-heart"></i><span>Liked</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ══════════════════ BOTTOM PLAYER BAR ══════════════════ -->
+    <footer class="player" id="player" aria-label="Music player">
+      <!-- Left: now playing -->
+      <div class="player-left">
+        <div class="np-cover-wrap">
+          <img
+            class="np-cover"
+            id="npCover"
+            alt="Current album artwork"
+            src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2058%2058'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23161d27'/%3E%3Cstop%20offset='1'%20stop-color='%230c1118'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='58'%20height='58'%20rx='9'%20fill='url(%23g)'/%3E%3Cpath%20d='M24%2040V20l14-3v19'%20fill='none'%20stroke='%233d4855'%20stroke-width='2.5'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3Ccircle%20cx='21'%20cy='40'%20r='4'%20fill='%233d4855'/%3E%3Ccircle%20cx='35'%20cy='36'%20r='4'%20fill='%233d4855'/%3E%3C/svg%3E"
+          />
+          <button
+            class="np-expand-mini only-mobile"
+            id="btnExpandMini"
+            aria-label="Expand player"
+          >
+            <i class="fa-solid fa-chevron-up"></i>
+          </button>
+        </div>
+        <div class="np-meta">
+          <p class="np-title" id="npTitle">Nothing playing</p>
+          <p class="np-artist" id="npArtist">Pick a song to start</p>
+        </div>
+        <button
+          class="icon-btn like-btn"
+          id="btnLike"
+          aria-label="Like song"
+          disabled
+        >
+          <i class="fa-regular fa-heart"></i>
+        </button>
+      </div>
+
+      <!-- Center: transport -->
+      <div class="player-center">
+        <div class="transport">
+          <button
+            class="icon-btn ghost"
+            id="btnShuffle"
+            title="Shuffle (S)"
+            aria-label="Shuffle"
+          >
+            <i class="fa-solid fa-shuffle"></i>
+          </button>
+          <button
+            class="icon-btn ghost"
+            id="btnPrev"
+            title="Previous (P)"
+            aria-label="Previous track"
+          >
+            <i class="fa-solid fa-backward-step"></i>
+          </button>
+          <button
+            class="play-btn"
+            id="btnPlay"
+            title="Play / Pause (Space)"
+            aria-label="Play or pause"
+          >
+            <i class="fa-solid fa-play"></i>
+          </button>
+          <button
+            class="icon-btn ghost"
+            id="btnNext"
+            title="Next (N)"
+            aria-label="Next track"
+          >
+            <i class="fa-solid fa-forward-step"></i>
+          </button>
+          <button
+            class="icon-btn ghost"
+            id="btnRepeat"
+            title="Repeat (R)"
+            aria-label="Repeat"
+          >
+            <i class="fa-solid fa-repeat"></i>
+          </button>
+        </div>
+        <div class="progress-row">
+          <span class="time" id="curTime">0:00</span>
+          <input
+            class="slider seek"
+            id="seek"
+            type="range"
+            min="0"
+            max="1000"
+            value="0"
+            step="1"
+            aria-label="Seek"
+          />
+          <span class="time" id="durTime">0:00</span>
+        </div>
+      </div>
+
+      <!-- Right: extras -->
+      <div class="player-right">
+        <button
+          class="icon-btn ghost hide-md"
+          id="btnLyrics"
+          title="Lyrics"
+          aria-label="Toggle lyrics"
+        >
+          <i class="fa-solid fa-microphone-lines"></i>
+        </button>
+        <button
+          class="icon-btn ghost hide-md"
+          id="btnQueue"
+          title="Queue (Q)"
+          aria-label="Toggle queue"
+        >
+          <i class="fa-solid fa-bars-staggered"></i>
+        </button>
+        <div class="volume hide-md">
+          <button
+            class="icon-btn ghost"
+            id="btnMute"
+            title="Mute (M)"
+            aria-label="Mute"
+          >
+            <i class="fa-solid fa-volume-high"></i>
+          </button>
+          <input
+            class="slider vol"
+            id="volSlider"
+            type="range"
+            min="0"
+            max="100"
+            value="80"
+            step="1"
+            aria-label="Volume"
+          />
+        </div>
+        <button
+          class="icon-btn ghost hide-md"
+          id="btnExpand"
+          title="Full screen player (F)"
+          aria-label="Expand player"
+        >
+          <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+        </button>
+      </div>
+
+      <!-- hairline progress shown on mobile compact bar -->
+      <div class="player-hairline" id="playerHairline" aria-hidden="true"></div>
+    </footer>
+
+    <!-- ══════════════════ QUEUE PANEL ══════════════════ -->
+    <aside
+      class="side-panel"
+      id="queuePanel"
+      aria-label="Play queue"
+      aria-hidden="true"
+    >
+      <header class="panel-head">
+        <h2><i class="fa-solid fa-bars-staggered"></i> Queue</h2>
+        <button
+          class="icon-btn ghost sm"
+          id="queueClose"
+          aria-label="Close queue"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+      <div class="panel-body" id="queueBody"><!-- rendered by JS --></div>
+    </aside>
+
+    <!-- ══════════════════ LYRICS PANEL ══════════════════ -->
+    <aside
+      class="side-panel"
+      id="lyricsPanel"
+      aria-label="Lyrics"
+      aria-hidden="true"
+    >
+      <header class="panel-head">
+        <h2><i class="fa-solid fa-microphone-lines"></i> Lyrics</h2>
+        <button
+          class="icon-btn ghost sm"
+          id="lyricsClose"
+          aria-label="Close lyrics"
+        >
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </header>
+      <div class="panel-body lyrics-body" id="lyricsBody">
+        <!-- rendered by JS -->
+      </div>
+    </aside>
+
+    <!-- ══════════════════ FULLSCREEN NOW-PLAYING ══════════════════ -->
+    <section
+      class="fullscreen"
+      id="fullscreen"
+      aria-hidden="true"
+      aria-label="Now playing"
+    >
+      <div class="fs-bg" id="fsBg" aria-hidden="true"></div>
+      <button
+        class="icon-btn fs-close"
+        id="fsClose"
+        aria-label="Close full screen player"
+      >
+        <i class="fa-solid fa-chevron-down"></i>
+      </button>
+      <div class="fs-inner">
+        <div class="fs-art-col">
+          <div class="fs-art-glow" aria-hidden="true"></div>
+          <img
+            class="fs-cover"
+            id="fsCover"
+            alt="Album artwork"
+            src="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2058%2058'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='0'%20y1='0'%20x2='1'%20y2='1'%3E%3Cstop%20offset='0'%20stop-color='%23161d27'/%3E%3Cstop%20offset='1'%20stop-color='%230c1118'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='58'%20height='58'%20rx='9'%20fill='url(%23g)'/%3E%3Cpath%20d='M24%2040V20l14-3v19'%20fill='none'%20stroke='%233d4855'%20stroke-width='2.5'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3Ccircle%20cx='21'%20cy='40'%20r='4'%20fill='%233d4855'/%3E%3Ccircle%20cx='35'%20cy='36'%20r='4'%20fill='%233d4855'/%3E%3C/svg%3E"
+          />
+        </div>
+        <div class="fs-info-col">
+          <p class="fs-eyebrow" id="fsEyebrow">NOW PLAYING</p>
+          <h1 class="fs-title" id="fsTitle">—</h1>
+          <p class="fs-artist" id="fsArtist">—</p>
+          <div class="fs-actions">
+            <button class="icon-btn like-btn lg" id="fsLike" aria-label="Like">
+              <i class="fa-regular fa-heart"></i>
+            </button>
+            <button class="icon-btn ghost lg" id="fsQueue" aria-label="Queue">
+              <i class="fa-solid fa-bars-staggered"></i>
+            </button>
+            <button class="icon-btn ghost lg" id="fsLyrics" aria-label="Lyrics">
+              <i class="fa-solid fa-microphone-lines"></i>
+            </button>
+          </div>
+          <div class="progress-row fs-progress">
+            <span class="time" id="fsCur">0:00</span>
+            <input
+              class="slider seek"
+              id="fsSeek"
+              type="range"
+              min="0"
+              max="1000"
+              value="0"
+              step="1"
+              aria-label="Seek"
+            />
+            <span class="time" id="fsDur">0:00</span>
+          </div>
+          <div class="transport fs-transport">
+            <button class="icon-btn ghost" id="fsShuffle" aria-label="Shuffle">
+              <i class="fa-solid fa-shuffle"></i>
+            </button>
+            <button class="icon-btn ghost lg" id="fsPrev" aria-label="Previous">
+              <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button class="play-btn xl" id="fsPlay" aria-label="Play or pause">
+              <i class="fa-solid fa-play"></i>
+            </button>
+            <button class="icon-btn ghost lg" id="fsNext" aria-label="Next">
+              <i class="fa-solid fa-forward-step"></i>
+            </button>
+            <button class="icon-btn ghost" id="fsRepeat" aria-label="Repeat">
+              <i class="fa-solid fa-repeat"></i>
+            </button>
+          </div>
+          <div class="fs-volume">
+            <button class="icon-btn ghost" id="fsMute" aria-label="Mute">
+              <i class="fa-solid fa-volume-high"></i>
+            </button>
+            <input
+              class="slider vol"
+              id="fsVol"
+              type="range"
+              min="0"
+              max="100"
+              value="80"
+              step="1"
+              aria-label="Volume"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════ CONTEXT (3-DOT) MENU ══════════════════ -->
+    <div class="ctx-menu" id="ctxMenu" role="menu" aria-hidden="true"></div>
+
+    <!-- ══════════════════ MODAL (create playlist) ══════════════════ -->
+    <div class="modal-overlay" id="modalOverlay" hidden>
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <h3 id="modalTitle">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Create Playlist
+        </h3>
+        <p class="modal-sub">Give your new playlist a name.</p>
+        <input
+          type="text"
+          id="modalInput"
+          class="modal-input"
+          placeholder="My late-night mixes…"
+          maxlength="40"
+        />
+        <div class="modal-actions">
+          <button class="btn ghost" id="modalCancel">Cancel</button>
+          <button class="btn accent" id="modalConfirm">
+            <i class="fa-solid fa-plus"></i> Create
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════ TOAST ══════════════════ -->
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <!-- The one and only audio engine -->
+    <audio id="audio" preload="metadata"></audio>
+
+    <!-- Scripts: data → UI/store → player engine -->
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/player.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        App.init();
+        Player.init();
+      });
+    </script>
+  </body>
+</html>
